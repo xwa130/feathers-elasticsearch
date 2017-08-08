@@ -118,7 +118,7 @@ class Service {
   raw (method, params) {
     if(typeof method === 'undefined') {
       return Promise
-        .resolve(new Error('params.method must be defined.'));
+        .reject(new Error('params.method must be defined.'));
     }
 
     return raw(this, method, params)
@@ -130,11 +130,14 @@ function raw(service, method, params) {
   // handle client methods like indices.create
   const [meth, ext] = method.split('.');
 
-  if (typeof ext !== 'undefined') {
-    return service.Model[meth][ext](params);
+  if (typeof service.Model[meth] !== 'function') {
+    return Promise
+      .reject(new Error(`There is no query method ${meth}`));
   }
 
-  return service.Model[meth](params);
+  return (typeof service.Model[meth][ext] === 'function')
+    ? service.Model[meth][ext](params)
+    : service.Model[meth](params);
 }
 
 function find (service, params) {
